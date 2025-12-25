@@ -1,0 +1,8 @@
+id: SO0013
+name: live-streaming-on-aws
+version: v4.2.15
+terraform_configuration:
+  - directory: terraform/
+    main_configuration: true
+build_environment:
+  build_image: "aws/codebuild/standard:7.0"
