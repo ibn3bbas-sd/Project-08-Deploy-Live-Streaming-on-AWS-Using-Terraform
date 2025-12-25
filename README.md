@@ -1,4 +1,4 @@
-# Live Streaming on AWS
+# Deploy Live Streaming on AWS Using Terraform
 
 How to implement Live streaming on AWS at scale leveraging AWS Elemental MediaLive, MediaPackage and Amazon CloudFront. This repo contains the source code for the AWS solution [Live Streaming on AWS](https://aws.amazon.com/solutions/implementations/live-streaming-on-aws/?did=sl_card&trk=sl_card).
 
@@ -16,7 +16,8 @@ Ingests the MediaLive Output and package the Live stream into HTTP live streamin
 Is configured with the MediaPackage custom endpoints as the Origins for the distribution. CloudFront then enable the live stream content to be delivered globally and at scale.
 
 **Optional Demo Deployment**<br/>
-As part of the Terraform configuration, a Demo HTML preview player can be deployed to an Amazon S3 bucket. This is a single-page HTML/JavaScript application that will playback the HTTP live streaming (HLS), Dynamic Adaptive Streaming over HTTP (DASH), MSS, and CMAF streams. Additionally, the solution can be configured to ingest a Demo HTTP live streaming (HLS) feed hosted on AWS.   
+As part of the Terraform configuration, a Demo HTML preview player can be deployed to an Amazon S3 bucket. This is a single-page HTML/JavaScript application that will playback the HTTP live streaming (HLS), Dynamic Adaptive Streaming over HTTP (DASH), Microsoft Smooth Streaming (MSS), and Common
+Media Application Format (CMAF) streams. Additionally, the solution can be configured to ingest a Demo HTTP live streaming (HLS) feed hosted on AWS.   
 
 
 ## Deployment
