@@ -16,8 +16,7 @@ Ingests the MediaLive Output and package the Live stream into HTTP live streamin
 Is configured with the MediaPackage custom endpoints as the Origins for the distribution. CloudFront then enable the live stream content to be delivered globally and at scale.
 
 **Optional Demo Deployment**<br/>
-As part of the Terraform configuration, a Demo HTML preview player can be deployed to an Amazon S3 bucket. This is a single-page HTML/JavaScript application that will playback the HTTP live streaming (HLS), Dynamic Adaptive Streaming over HTTP (DASH), Microsoft Smooth Streaming (MSS), and Common
-Media Application Format (CMAF) streams. Additionally, the solution can be configured to ingest a Demo HTTP live streaming (HLS) feed hosted on AWS.   
+As part of the Terraform configuration, a Demo HTML preview player can be deployed to an Amazon S3 bucket. This is a single-page HTML/JavaScript application that will playback the HTTP live streaming (HLS), Dynamic Adaptive Streaming over HTTP (DASH), Microsoft Smooth Streaming (MSS), and Common Media Application Format (CMAF) streams. Additionally, the solution can be configured to ingest a Demo HTTP live streaming (HLS) feed hosted on AWS.   
 
 
 ## Deployment
