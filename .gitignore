@@ -27,3 +27,13 @@ source/test/*
 terraform.tfvars
 terraform.tfvars.json
 .terraform.lock.hcl
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+.venv/
+GEMINI.md
+
+

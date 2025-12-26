@@ -61,6 +61,14 @@ describe('#MEDIAPACKAGE::', () => {
 		const response = await lambda.createEndPoint(_config);
     expect(response.DomainName).to.equal('test.com');
 	});
+
+  it('should return "responseData" on mediapackage create DASH EndPoint', async () => {
+    mediaPackageClientMock.on(CreateOriginEndpointCommand).resolves(data);
+    const dashConfig = { ..._config, EndPoint: 'DASH' };
+		const response = await lambda.createEndPoint(dashConfig);
+    expect(response.DomainName).to.equal('test.com');
+	});
+  
   it('should return "ERROR" on mediapackage create EndPoint', async () => {
     mediaPackageClientMock.on(CreateOriginEndpointCommand).rejects('ERROR');
     await lambda.createEndPoint(_config).catch(err => {
