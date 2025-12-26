@@ -1,0 +1,37 @@
+{
+  "name": "terraform-solution-helper",
+  "version": "1.0.0",
+  "description": "Prepares Terraform configurations and Lambda deployment packages for the AWS Solutions publishing pipeline",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "process": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "terraform",
+    "aws",
+    "solutions",
+    "deployment",
+    "lambda",
+    "infrastructure-as-code"
+  ],
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Amazon Web Services",
+    "url": "https://aws.amazon.com/solutions"
+  },
+  "engines": {
+    "node": ">=12.x"
+  },
+  "dependencies": {
+    "archiver": "^5.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/awslabs/live-streaming-on-aws"
+  }
+}

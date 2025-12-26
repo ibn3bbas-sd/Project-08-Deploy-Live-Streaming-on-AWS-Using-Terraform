@@ -329,18 +329,29 @@ Use the [AWS Pricing Calculator](https://calculator.aws/) for detailed estimates
 
 ```
 .
-├── terraform/                 # Terraform configuration files
-│   ├── main.tf               # Main infrastructure definition
-│   ├── variables.tf          # Input variables
-│   └── outputs.tf            # Output values
+├── deployment/                 # Build and deployment scripts
+│   ├── build-s3-dist.sh
+│   └── run-unit-tests.sh
 ├── source/
-│   └── custom-resource/      # Lambda function for custom resources
-│       └── lib/
-│           └── medialive/
-│               └── encoding-profiles/  # Encoding profile definitions
-├── deployment/               # Build and deployment scripts
-│   ├── build-s3-dist.sh     # Build script
-│   └── run-unit-tests.sh    # Test script
+│   ├── console/                # React frontend for the demo player
+│   │   ├── public/index.html
+│   │   └── src/App.js
+│   ├── constructs/             # AWS CDK constructs for infrastructure
+│   │   ├── bin/live-streaming.ts
+│   │   ├── lib/live-streaming.ts
+│   │   └── test/live-streaming.test.ts
+│   └── custom-resource/        # Lambda functions for custom resources
+│       ├── lib/
+│       │   ├── medialive/
+│       │   └── mediapackage/
+│       └── index.js
+├── terraform/                  # Terraform configuration for AWS resources
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+├── .gitignore
+├── architecture.png
+├── LICENSE.txt
 └── README.md
 ```
 
