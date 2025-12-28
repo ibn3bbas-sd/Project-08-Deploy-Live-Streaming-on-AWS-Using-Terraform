@@ -93,8 +93,8 @@ Your AWS user or role needs permissions for:
 
 ```bash
 # Clone the repository
-git clone https://github.com/awslabs/live-streaming-on-aws.git
-cd live-streaming-on-aws
+git clone https://github.com/ibn3bbas-sd/Project-08-Deploy-Live-Streaming-on-AWS-Using-Terraform.git
+cd Project-08-Deploy-Live-Streaming-on-AWS-Using-Terraform
 
 # Navigate to Terraform directory
 cd terraform
