@@ -259,7 +259,7 @@ Access logs in CloudWatch Logs:
 ### Step 1: Clone and Modify
 
 ```bash
-git clone https://github.com/awslabs/live-streaming-on-aws.git
+git clone https://github.com/ibn3bbas-sd/Project-08-Deploy-Live-Streaming-on-AWS-Using-Terraform.git
 cd live-streaming-on-aws
 # Make your modifications to the source code
 ```
