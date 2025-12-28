@@ -34,6 +34,5 @@ terraform.tfvars.json
 *.ntvs*
 *.njsproj
 .venv/
+#GEMINI
 GEMINI.md
-
-
