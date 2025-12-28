@@ -25,7 +25,11 @@ This repository contains the source code for the AWS solution [Live Streaming on
 
 ## ✨ Features
 
-- **Multi-format streaming**: Supports HTTP Live Streaming (HLS), Dynamic Adaptive Streaming over HTTP (DASH), and Common Media Application Format (CMAF) , and Microsoft Smooth Streaming
+- **Multi-format streaming**: Supports:
+   HTTP Live Streaming (HLS)
+   Dynamic Adaptive Streaming over HTTP (DASH)
+   Common Media Application Format (CMAF)
+   Microsoft Smooth Streaming (MSS)
 - **Adaptive bitrate encoding**: Automatic transcoding to multiple resolutions (1080p to 270p)
 - **Global content delivery**: CloudFront integration for low-latency worldwide distribution
 - **Flexible input sources**: Supports RTP, RTMP, HLS, and MediaConnect streams
