@@ -35,7 +35,7 @@ This directory contains Terraform configuration files to deploy the Live Streami
 
 ## Variables
 
-- `aws_region`: The AWS region to deploy resources in (default: `us-east-1`).
+- `aws_region`: The AWS region to deploy resources in (default: `eu-north-1`).
 - `s3_bucket_name`: The name of the S3 bucket for live streaming.
 
 ## Outputs
