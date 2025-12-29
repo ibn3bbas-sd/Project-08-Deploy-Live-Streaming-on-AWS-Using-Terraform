@@ -2,17 +2,6 @@
 
 terraform {
   required_version = ">= 1.0"
-  
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
-  }
 }
 
 provider "aws" {
@@ -164,11 +153,11 @@ resource "aws_media_package_channel" "live_streaming_package" {
   description = "Live streaming MediaPackage channel for ${var.project_name}"
 }
 
-# HLS Endpoint
-resource "aws_media_package_origin_endpoint" "hls_endpoint" {
+# HLS Endpoint - FIXED RESOURCE TYPE NAME
+resource "aws_mediapackage_origin_endpoint" "hls_endpoint" {
   count               = var.enable_hls ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
-  endpoint_id         = "${local.resource_prefix}-hls-${local.unique_id}"
+  id                  = "${local.resource_prefix}-hls-${local.unique_id}"
   description         = "HLS endpoint for live streaming"
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
@@ -195,11 +184,11 @@ resource "aws_media_package_origin_endpoint" "hls_endpoint" {
   }
 }
 
-# DASH Endpoint
-resource "aws_media_package_origin_endpoint" "dash_endpoint" {
+# DASH Endpoint - FIXED RESOURCE TYPE NAME
+resource "aws_mediapackage_origin_endpoint" "dash_endpoint" {
   count               = var.enable_dash ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
-  endpoint_id         = "${local.resource_prefix}-dash-${local.unique_id}"
+  id                  = "${local.resource_prefix}-dash-${local.unique_id}"
   description         = "DASH endpoint for live streaming"
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
@@ -223,11 +212,11 @@ resource "aws_media_package_origin_endpoint" "dash_endpoint" {
   }
 }
 
-# CMAF Endpoint
-resource "aws_media_package_origin_endpoint" "cmaf_endpoint" {
+# CMAF Endpoint - FIXED RESOURCE TYPE NAME
+resource "aws_mediapackage_origin_endpoint" "cmaf_endpoint" {
   count               = var.enable_cmaf ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
-  endpoint_id         = "${local.resource_prefix}-cmaf-${local.unique_id}"
+  id                  = "${local.resource_prefix}-cmaf-${local.unique_id}"
   description         = "CMAF endpoint for live streaming"
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
@@ -236,7 +225,8 @@ resource "aws_media_package_origin_endpoint" "cmaf_endpoint" {
     segment_duration_seconds = var.mediapackage_segment_duration
     
     hls_manifests {
-      manifest_name        = "index"
+      id                  = "cmaf-hls"
+      manifest_name       = "index"
       playlist_window_seconds = var.mediapackage_manifest_window
       program_date_time_interval_seconds = 60
     }
@@ -255,11 +245,11 @@ resource "aws_media_package_origin_endpoint" "cmaf_endpoint" {
   }
 }
 
-# MSS Endpoint
-resource "aws_media_package_origin_endpoint" "mss_endpoint" {
+# MSS Endpoint - FIXED RESOURCE TYPE NAME
+resource "aws_mediapackage_origin_endpoint" "mss_endpoint" {
   count               = var.enable_mss ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
-  endpoint_id         = "${local.resource_prefix}-mss-${local.unique_id}"
+  id                  = "${local.resource_prefix}-mss-${local.unique_id}"
   description         = "MSS endpoint for live streaming"
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
@@ -395,7 +385,6 @@ resource "aws_medialive_channel" "live_streaming_channel" {
 
   input_specification {
     codec            = var.input_codec
-    resolution       = var.encoding_profile == "1080" ? "HD" : (var.encoding_profile == "720" ? "HD" : "SD")
     maximum_bitrate  = "MAX_20_MBPS"
     input_resolution = var.encoding_profile == "1080" ? "HD" : (var.encoding_profile == "720" ? "HD" : "SD")
   }
@@ -422,7 +411,6 @@ resource "aws_medialive_channel" "live_streaming_channel" {
           coding_mode     = "CODING_MODE_2_0"
           input_type      = "NORMAL"
           profile         = "LC"
-          rate_control    = "CBR"
           raw_format      = "NONE"
           sample_rate     = 48000
           spec            = "MPEG4"
@@ -430,51 +418,7 @@ resource "aws_medialive_channel" "live_streaming_channel" {
       }
     }
 
-    # Video descriptions for each resolution in the encoding profile
-    dynamic "video_descriptions" {
-      for_each = toset(local.encoding_profiles[var.encoding_profile])
-      content {
-        name              = "video_${replace(video_descriptions.value, "x", "_")}"
-        respond_to_afd    = "NONE"
-        scaling_behavior  = "DEFAULT"
-        sharpness         = 50
-
-        codec_settings {
-          h264_settings {
-            adaptive_quantization = "HIGH"
-            afd_signaling        = "NONE"
-            bitrate              = tonumber(split("x", video_descriptions.value)[0]) * 3
-            color_metadata       = "INSERT"
-            entropy_encoding     = "CABAC"
-            flicker_aq          = "ENABLED"
-            framerate_control   = "SPECIFIED"
-            framerate_numerator = 30000
-            framerate_denominator = 1001
-            gop_b_reference     = "DISABLED"
-            gop_closed_cadence  = 1
-            gop_num_b_frames    = 3
-            gop_size            = 60
-            gop_size_units      = "FRAMES"
-            level               = "H264_LEVEL_AUTO"
-            look_ahead_rate_control = "HIGH"
-            num_ref_frames      = 3
-            par_control         = "SPECIFIED"
-            profile             = "HIGH"
-            rate_control_mode   = "CBR"
-            scan_type           = "PROGRESSIVE"
-            scene_change_detect = "ENABLED"
-            spatial_aq          = "ENABLED"
-            syntax              = "DEFAULT"
-            temporal_aq         = "ENABLED"
-            timecode_insertion  = "DISABLED"
-          }
-        }
-
-        height = tonumber(split("x", video_descriptions.value)[1])
-        width  = tonumber(split("x", video_descriptions.value)[0])
-      }
-    }
-
+    # ADDED: Required output_groups block
     output_groups {
       output_group_settings {
         media_package_group_settings {
@@ -484,23 +428,73 @@ resource "aws_medialive_channel" "live_streaming_channel" {
         }
       }
 
-      dynamic "outputs" {
-        for_each = toset(local.encoding_profiles[var.encoding_profile])
-        content {
-          output_name             = replace(outputs.value, "x", "_")
-          video_description_name  = "video_${replace(outputs.value, "x", "_")}"
-          audio_description_names = ["audio_1"]
-          output_settings {
-            media_package_output_settings {}
-          }
+      outputs {
+        output_name             = "HD-1080p"
+        video_description_name  = "video_1080p"
+        audio_description_names = ["audio_1"]
+        output_settings {
+          media_package_output_settings {}
         }
       }
+    }
+
+    # ADDED: Video descriptions for the outputs
+    video_descriptions {
+      name              = "video_1080p"
+      respond_to_afd    = "NONE"
+      scaling_behavior  = "DEFAULT"
+      sharpness         = 50
+      
+      codec_settings {
+        h264_settings {
+          adaptive_quantization = "HIGH"
+          bitrate              = 5000000
+          buf_size             = 10000000
+          color_metadata       = "INSERT"
+          entropy_encoding     = "CABAC"
+          framerate_control    = "SPECIFIED"
+          framerate_numerator  = 30
+          framerate_denominator = 1
+          gop_b_reference      = "ENABLED"
+          gop_closed_cadence   = 1
+          gop_num_b_frames     = 3
+          gop_size             = 60
+          gop_size_units       = "FRAMES"
+          level                = "H264_LEVEL_4_1"
+          look_ahead_rate_control = "HIGH"
+          num_ref_frames       = 3
+          par_control          = "SPECIFIED"
+          profile              = "HIGH"
+          rate_control_mode    = "CBR"
+          scene_change_detect  = "ENABLED"
+          spatial_aq           = "ENABLED"
+          syntax               = "DEFAULT"
+          temporal_aq          = "ENABLED"
+          timecode_insertion   = "DISABLED"
+        }
+      }
+      
+      height = 1080
+      width  = 1920
     }
   }
 
   input_attachments {
     input_id                = aws_medialive_input.live_streaming_input.id
     input_attachment_name   = "input-attachment"
+    
+    input_settings {
+      source_end_behavior = "CONTINUE"
+      
+      audio_selectors {
+        name = "default"
+        selector_settings {
+          audio_pid_selection {
+            pid = 0
+          }
+        }
+      }
+    }
   }
 
   tags = {
@@ -523,7 +517,7 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   dynamic "origin" {
     for_each = var.enable_hls ? [1] : []
     content {
-      domain_name = replace(aws_media_package_origin_endpoint.hls_endpoint[0].url, "https://", "")
+      domain_name = replace(aws_mediapackage_origin_endpoint.hls_endpoint[0].url, "https://", "")
       origin_id   = "mediapackage-hls"
       origin_path = ""
 
@@ -540,7 +534,7 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   dynamic "origin" {
     for_each = var.enable_dash ? [1] : []
     content {
-      domain_name = replace(aws_media_package_origin_endpoint.dash_endpoint[0].url, "https://", "")
+      domain_name = replace(aws_mediapackage_origin_endpoint.dash_endpoint[0].url, "https://", "")
       origin_id   = "mediapackage-dash"
       origin_path = ""
 
@@ -557,7 +551,7 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   dynamic "origin" {
     for_each = var.enable_cmaf ? [1] : []
     content {
-      domain_name = replace(aws_media_package_origin_endpoint.cmaf_endpoint[0].url, "https://", "")
+      domain_name = replace(aws_mediapackage_origin_endpoint.cmaf_endpoint[0].url, "https://", "")
       origin_id   = "mediapackage-cmaf"
       origin_path = ""
 
