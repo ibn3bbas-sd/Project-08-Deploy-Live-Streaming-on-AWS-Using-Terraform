@@ -30,50 +30,6 @@ output "mediapackage_channel_ingest_endpoints" {
   sensitive = true
 }
 
-# HLS Endpoint
-output "mediapackage_hls_endpoint_url" {
-  description = "MediaPackage HLS endpoint URL"
-  value       = var.enable_hls ? awscc_mediapackage_origin_endpoint.hls_endpoint[0].url : null
-}
-
-output "mediapackage_hls_endpoint_id" {
-  description = "MediaPackage HLS endpoint ID"
-  value       = var.enable_hls ? awscc_mediapackage_origin_endpoint.hls_endpoint[0].id : null
-}
-
-# DASH Endpoint
-output "mediapackage_dash_endpoint_url" {
-  description = "MediaPackage DASH endpoint URL"
-  value       = var.enable_dash ? awscc_mediapackage_origin_endpoint.dash_endpoint[0].url : null
-}
-
-output "mediapackage_dash_endpoint_id" {
-  description = "MediaPackage DASH endpoint ID"
-  value       = var.enable_dash ? awscc_mediapackage_origin_endpoint.dash_endpoint[0].id : null
-}
-
-# CMAF Endpoint
-output "mediapackage_cmaf_endpoint_url" {
-  description = "MediaPackage CMAF endpoint URL"
-  value       = var.enable_cmaf ? awscc_mediapackage_origin_endpoint.cmaf_endpoint[0].url : null
-}
-
-output "mediapackage_cmaf_endpoint_id" {
-  description = "MediaPackage CMAF endpoint ID"
-  value       = var.enable_cmaf ? awscc_mediapackage_origin_endpoint.cmaf_endpoint[0].id : null
-}
-
-# MSS Endpoint
-output "mediapackage_mss_endpoint_url" {
-  description = "MediaPackage MSS endpoint URL"
-  value       = var.enable_mss ? awscc_mediapackage_origin_endpoint.mss_endpoint[0].url : null
-}
-
-output "mediapackage_mss_endpoint_id" {
-  description = "MediaPackage MSS endpoint ID"
-  value       = var.enable_mss ? awscc_mediapackage_origin_endpoint.mss_endpoint[0].id : null
-}
-
 # MediaLive
 output "medialive_channel_id" {
   description = "MediaLive channel ID"
@@ -91,7 +47,7 @@ output "medialive_input_id" {
 }
 
 output "medialive_input_destinations" {
-  description = "MediaLive input destinations"
+  description = "MediaLive input destinations (RTMP push URLs)"
   value       = aws_medialive_input.live_streaming_input.destinations
   sensitive   = true
 }
@@ -121,4 +77,37 @@ output "medialive_log_group_name" {
 output "medialive_log_group_arn" {
   description = "MediaLive CloudWatch log group ARN"
   value       = aws_cloudwatch_log_group.medialive_log_group.arn
+}
+
+# Instructions for creating origin endpoints
+output "instructions" {
+  description = "Instructions for completing the setup"
+  value = <<-EOT
+  
+  ========================================
+  IMPORTANT: Next Steps
+  ========================================
+  
+  MediaPackage Origin Endpoints are not yet supported in the Terraform AWS provider.
+  To complete your setup, you need to create them manually:
+  
+  Option 1: Use the provided script (recommended):
+    chmod +x create_mediapackage_endpoints.sh
+    ./create_mediapackage_endpoints.sh
+  
+  Option 2: Create manually via AWS Console:
+    1. Go to AWS MediaPackage Console
+    2. Select your channel: ${aws_media_package_channel.live_streaming_package.id}
+    3. Create origin endpoints for HLS, DASH, and/or CMAF
+    4. Update CloudFront origins with the endpoint URLs
+  
+  Option 3: Use AWS CLI:
+    aws mediapackage create-origin-endpoint \\
+      --channel-id ${aws_media_package_channel.live_streaming_package.id} \\
+      --id ${aws_media_package_channel.live_streaming_package.id}-hls \\
+      --hls-package SegmentDurationSeconds=6,PlaylistWindowSeconds=60
+  
+  After creating endpoints, update CloudFront distribution origins.
+  
+  EOT
 }

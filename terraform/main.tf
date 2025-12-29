@@ -8,10 +8,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    awscc = {
-      source  = "hashicorp/awscc"
-      version = "~> 1.0"
-    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.0"
@@ -33,11 +29,6 @@ provider "aws" {
       var.tags
     )
   }
-}
-
-# Add the awscc provider for MediaPackage Origin Endpoints
-provider "awscc" {
-  region = var.aws_region
 }
 
 # Generate random string for unique resource names
@@ -174,127 +165,21 @@ resource "aws_media_package_channel" "live_streaming_package" {
 }
 
 # ==========================================
-# MediaPackage Origin Endpoints (using awscc provider)
+# NOTE: MediaPackage Origin Endpoints
 # ==========================================
-
-# HLS Endpoint
-resource "awscc_mediapackage_origin_endpoint" "hls_endpoint" {
-  count               = var.enable_hls ? 1 : 0
-  channel_id          = aws_media_package_channel.live_streaming_package.id
-  id                  = "${local.resource_prefix}-hls-${local.unique_id}"
-  description         = "HLS endpoint for live streaming"
-  manifest_name       = "index"
-  startover_window_seconds = var.startover_window_seconds
-
-  hls_package = {
-    segment_duration_seconds = var.mediapackage_segment_duration
-    playlist_window_seconds  = var.mediapackage_manifest_window
-    playlist_type            = "EVENT"
-    ad_markers               = "NONE"
-    include_iframe_only_stream = false
-    program_date_time_interval_seconds = 60
-
-    stream_selection = {
-      stream_order = "ORIGINAL"
-    }
-  }
-
-  dynamic "authorization" {
-    for_each = var.enable_cdn_authorization ? [1] : []
-    content {
-      cdn_identifier_secret = aws_secretsmanager_secret.cdn_secret[0].arn
-      secrets_role_arn      = aws_iam_role.mediapackage_secrets_role[0].arn
-    }
-  }
-}
-
-# DASH Endpoint
-resource "awscc_mediapackage_origin_endpoint" "dash_endpoint" {
-  count               = var.enable_dash ? 1 : 0
-  channel_id          = aws_media_package_channel.live_streaming_package.id
-  id                  = "${local.resource_prefix}-dash-${local.unique_id}"
-  description         = "DASH endpoint for live streaming"
-  manifest_name       = "index"
-  startover_window_seconds = var.startover_window_seconds
-
-  dash_package = {
-    segment_duration_seconds = var.mediapackage_segment_duration
-    manifest_window_seconds  = var.mediapackage_manifest_window
-    profile                  = "NONE"
-    
-    stream_selection = {
-      stream_order = "ORIGINAL"
-    }
-  }
-
-  dynamic "authorization" {
-    for_each = var.enable_cdn_authorization ? [1] : []
-    content {
-      cdn_identifier_secret = aws_secretsmanager_secret.cdn_secret[0].arn
-      secrets_role_arn      = aws_iam_role.mediapackage_secrets_role[0].arn
-    }
-  }
-}
-
-# CMAF Endpoint
-resource "awscc_mediapackage_origin_endpoint" "cmaf_endpoint" {
-  count               = var.enable_cmaf ? 1 : 0
-  channel_id          = aws_media_package_channel.live_streaming_package.id
-  id                  = "${local.resource_prefix}-cmaf-${local.unique_id}"
-  description         = "CMAF endpoint for live streaming"
-  manifest_name       = "index"
-  startover_window_seconds = var.startover_window_seconds
-
-  cmaf_package = {
-    segment_duration_seconds = var.mediapackage_segment_duration
-    
-    hls_manifests = [{
-      id                  = "cmaf-hls"
-      manifest_name       = "index"
-      playlist_window_seconds = var.mediapackage_manifest_window
-      program_date_time_interval_seconds = 60
-    }]
-
-    stream_selection = {
-      stream_order = "ORIGINAL"
-    }
-  }
-
-  dynamic "authorization" {
-    for_each = var.enable_cdn_authorization ? [1] : []
-    content {
-      cdn_identifier_secret = aws_secretsmanager_secret.cdn_secret[0].arn
-      secrets_role_arn      = aws_iam_role.mediapackage_secrets_role[0].arn
-    }
-  }
-}
-
-# MSS Endpoint
-resource "awscc_mediapackage_origin_endpoint" "mss_endpoint" {
-  count               = var.enable_mss ? 1 : 0
-  channel_id          = aws_media_package_channel.live_streaming_package.id
-  id                  = "${local.resource_prefix}-mss-${local.unique_id}"
-  description         = "MSS endpoint for live streaming"
-  manifest_name       = "index"
-  startover_window_seconds = var.startover_window_seconds
-
-  mss_package = {
-    segment_duration_seconds = var.mediapackage_segment_duration
-    manifest_window_seconds  = var.mediapackage_manifest_window
-    
-    stream_selection = {
-      stream_order = "ORIGINAL"
-    }
-  }
-
-  dynamic "authorization" {
-    for_each = var.enable_cdn_authorization ? [1] : []
-    content {
-      cdn_identifier_secret = aws_secretsmanager_secret.cdn_secret[0].arn
-      secrets_role_arn      = aws_iam_role.mediapackage_secrets_role[0].arn
-    }
-  }
-}
+# MediaPackage V1 Origin Endpoints are not yet supported in Terraform AWS provider.
+# You have three options:
+#
+# 1. Create them manually via AWS Console after running terraform apply
+# 2. Use AWS CLI to create them (see create_endpoints.sh script)
+# 3. Wait for AWS provider support (tracking issue in GitHub)
+#
+# The MediaPackage channel has been created and you can reference:
+#   - Channel ID: aws_media_package_channel.live_streaming_package.id
+#   - HLS Ingest URLs: aws_media_package_channel.live_streaming_package.hls_ingest
+#
+# After creating origin endpoints manually, you can import them:
+#   terraform import module.live_streaming.null_resource.hls_endpoint <endpoint-id>
 
 # ==========================================
 # CDN Authorization (Optional)
@@ -376,15 +261,6 @@ resource "aws_medialive_input" "live_streaming_input" {
   name                  = "${local.resource_prefix}-input-${local.unique_id}"
   input_security_groups = var.input_type == "RTMP_PUSH" || var.input_type == "RTP_PUSH" ? [aws_medialive_input_security_group.live_streaming_sg[0].id] : []
   type                  = var.input_type
-
-  dynamic "sources" {
-    for_each = var.channel_class == "STANDARD" ? [1, 2] : [1]
-    content {
-      password_param = ""
-      url            = ""
-      username       = ""
-    }
-  }
 
   dynamic "destinations" {
     for_each = var.input_type == "RTMP_PUSH" ? (var.channel_class == "STANDARD" ? [1, 2] : [1]) : []
@@ -504,18 +380,18 @@ resource "aws_medialive_channel" "live_streaming_channel" {
   }
 
   input_attachments {
-    input_id                = aws_medialive_input.live_streaming_input.id
-    input_attachment_name   = "input-attachment"
-    
+    input_attachment_name = "input-attachment"
+    input_id              = aws_medialive_input.live_streaming_input.id
+
     input_settings {
       source_end_behavior = "CONTINUE"
-      
-      # Fixed: Changed audio_selectors to audio_selector
+
       audio_selector {
         name = "default"
+
         selector_settings {
           audio_pid_selection {
-            pid = 0
+            pid = 1  # Added required Pid field
           }
         }
       }
@@ -530,6 +406,7 @@ resource "aws_medialive_channel" "live_streaming_channel" {
 # ==========================================
 # CloudFront Distribution
 # ==========================================
+# Note: This will need to be updated with origin endpoints after they are created
 
 resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   enabled             = true
@@ -538,62 +415,24 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   price_class         = var.cloudfront_price_class
   http_version        = "http2and3"
 
-  # HLS Origin
-  dynamic "origin" {
-    for_each = var.enable_hls ? [1] : []
-    content {
-      domain_name = replace(awscc_mediapackage_origin_endpoint.hls_endpoint[0].url, "https://", "")
-      origin_id   = "mediapackage-hls"
-      origin_path = ""
+  # Placeholder origin - Update this after creating MediaPackage origin endpoints
+  origin {
+    domain_name = "${aws_media_package_channel.live_streaming_package.id}.egress.us-east-1.mediapackage.amazonaws.com"
+    origin_id   = "mediapackage-placeholder"
 
-      custom_origin_config {
-        http_port              = 80
-        https_port             = 443
-        origin_protocol_policy = "https-only"
-        origin_ssl_protocols   = ["TLSv1.2"]
-      }
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
-  # DASH Origin
-  dynamic "origin" {
-    for_each = var.enable_dash ? [1] : []
-    content {
-      domain_name = replace(awscc_mediapackage_origin_endpoint.dash_endpoint[0].url, "https://", "")
-      origin_id   = "mediapackage-dash"
-      origin_path = ""
-
-      custom_origin_config {
-        http_port              = 80
-        https_port             = 443
-        origin_protocol_policy = "https-only"
-        origin_ssl_protocols   = ["TLSv1.2"]
-      }
-    }
-  }
-
-  # CMAF Origin
-  dynamic "origin" {
-    for_each = var.enable_cmaf ? [1] : []
-    content {
-      domain_name = replace(awscc_mediapackage_origin_endpoint.cmaf_endpoint[0].url, "https://", "")
-      origin_id   = "mediapackage-cmaf"
-      origin_path = ""
-
-      custom_origin_config {
-        http_port              = 80
-        https_port             = 443
-        origin_protocol_policy = "https-only"
-        origin_ssl_protocols   = ["TLSv1.2"]
-      }
-    }
-  }
-
-  # Default cache behavior (HLS)
+  # Default cache behavior
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = var.enable_hls ? "mediapackage-hls" : (var.enable_dash ? "mediapackage-dash" : "mediapackage-cmaf")
+    target_origin_id = "mediapackage-placeholder"
 
     forwarded_values {
       query_string = true
@@ -609,32 +448,6 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
     default_ttl            = 5
     max_ttl                = 60
     compress               = true
-  }
-
-  # Additional cache behaviors for DASH and CMAF
-  dynamic "ordered_cache_behavior" {
-    for_each = var.enable_dash ? [1] : []
-    content {
-      path_pattern     = "/out/v1/*/index.mpd*"
-      allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-      cached_methods   = ["GET", "HEAD"]
-      target_origin_id = "mediapackage-dash"
-
-      forwarded_values {
-        query_string = true
-        headers      = ["Origin"]
-
-        cookies {
-          forward = "none"
-        }
-      }
-
-      viewer_protocol_policy = "redirect-to-https"
-      min_ttl                = 0
-      default_ttl            = 5
-      max_ttl                = 60
-      compress               = true
-    }
   }
 
   viewer_certificate {
@@ -659,6 +472,13 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
 
   tags = {
     Name = "${local.resource_prefix}-distribution"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      origin,
+      default_cache_behavior
+    ]
   }
 }
 
