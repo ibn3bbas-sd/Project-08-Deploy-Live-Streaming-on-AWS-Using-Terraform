@@ -2,6 +2,21 @@
 
 terraform {
   required_version = ">= 1.0"
+  
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    awscc = {
+      source  = "hashicorp/awscc"
+      version = "~> 1.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
 }
 
 provider "aws" {
@@ -18,6 +33,11 @@ provider "aws" {
       var.tags
     )
   }
+}
+
+# Add the awscc provider for MediaPackage Origin Endpoints
+provider "awscc" {
+  region = var.aws_region
 }
 
 # Generate random string for unique resource names
@@ -153,8 +173,12 @@ resource "aws_media_package_channel" "live_streaming_package" {
   description = "Live streaming MediaPackage channel for ${var.project_name}"
 }
 
-# HLS Endpoint - FIXED RESOURCE TYPE NAME
-resource "aws_mediapackage_origin_endpoint" "hls_endpoint" {
+# ==========================================
+# MediaPackage Origin Endpoints (using awscc provider)
+# ==========================================
+
+# HLS Endpoint
+resource "awscc_mediapackage_origin_endpoint" "hls_endpoint" {
   count               = var.enable_hls ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
   id                  = "${local.resource_prefix}-hls-${local.unique_id}"
@@ -162,7 +186,7 @@ resource "aws_mediapackage_origin_endpoint" "hls_endpoint" {
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
 
-  hls_package {
+  hls_package = {
     segment_duration_seconds = var.mediapackage_segment_duration
     playlist_window_seconds  = var.mediapackage_manifest_window
     playlist_type            = "EVENT"
@@ -170,7 +194,7 @@ resource "aws_mediapackage_origin_endpoint" "hls_endpoint" {
     include_iframe_only_stream = false
     program_date_time_interval_seconds = 60
 
-    stream_selection {
+    stream_selection = {
       stream_order = "ORIGINAL"
     }
   }
@@ -184,8 +208,8 @@ resource "aws_mediapackage_origin_endpoint" "hls_endpoint" {
   }
 }
 
-# DASH Endpoint - FIXED RESOURCE TYPE NAME
-resource "aws_mediapackage_origin_endpoint" "dash_endpoint" {
+# DASH Endpoint
+resource "awscc_mediapackage_origin_endpoint" "dash_endpoint" {
   count               = var.enable_dash ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
   id                  = "${local.resource_prefix}-dash-${local.unique_id}"
@@ -193,12 +217,12 @@ resource "aws_mediapackage_origin_endpoint" "dash_endpoint" {
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
 
-  dash_package {
+  dash_package = {
     segment_duration_seconds = var.mediapackage_segment_duration
     manifest_window_seconds  = var.mediapackage_manifest_window
     profile                  = "NONE"
     
-    stream_selection {
+    stream_selection = {
       stream_order = "ORIGINAL"
     }
   }
@@ -212,8 +236,8 @@ resource "aws_mediapackage_origin_endpoint" "dash_endpoint" {
   }
 }
 
-# CMAF Endpoint - FIXED RESOURCE TYPE NAME
-resource "aws_mediapackage_origin_endpoint" "cmaf_endpoint" {
+# CMAF Endpoint
+resource "awscc_mediapackage_origin_endpoint" "cmaf_endpoint" {
   count               = var.enable_cmaf ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
   id                  = "${local.resource_prefix}-cmaf-${local.unique_id}"
@@ -221,17 +245,17 @@ resource "aws_mediapackage_origin_endpoint" "cmaf_endpoint" {
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
 
-  cmaf_package {
+  cmaf_package = {
     segment_duration_seconds = var.mediapackage_segment_duration
     
-    hls_manifests {
+    hls_manifests = [{
       id                  = "cmaf-hls"
       manifest_name       = "index"
       playlist_window_seconds = var.mediapackage_manifest_window
       program_date_time_interval_seconds = 60
-    }
+    }]
 
-    stream_selection {
+    stream_selection = {
       stream_order = "ORIGINAL"
     }
   }
@@ -245,8 +269,8 @@ resource "aws_mediapackage_origin_endpoint" "cmaf_endpoint" {
   }
 }
 
-# MSS Endpoint - FIXED RESOURCE TYPE NAME
-resource "aws_mediapackage_origin_endpoint" "mss_endpoint" {
+# MSS Endpoint
+resource "awscc_mediapackage_origin_endpoint" "mss_endpoint" {
   count               = var.enable_mss ? 1 : 0
   channel_id          = aws_media_package_channel.live_streaming_package.id
   id                  = "${local.resource_prefix}-mss-${local.unique_id}"
@@ -254,11 +278,11 @@ resource "aws_mediapackage_origin_endpoint" "mss_endpoint" {
   manifest_name       = "index"
   startover_window_seconds = var.startover_window_seconds
 
-  mss_package {
+  mss_package = {
     segment_duration_seconds = var.mediapackage_segment_duration
     manifest_window_seconds  = var.mediapackage_manifest_window
     
-    stream_selection {
+    stream_selection = {
       stream_order = "ORIGINAL"
     }
   }
@@ -418,7 +442,7 @@ resource "aws_medialive_channel" "live_streaming_channel" {
       }
     }
 
-    # ADDED: Required output_groups block
+    # Required output_groups block
     output_groups {
       output_group_settings {
         media_package_group_settings {
@@ -438,7 +462,7 @@ resource "aws_medialive_channel" "live_streaming_channel" {
       }
     }
 
-    # ADDED: Video descriptions for the outputs
+    # Video descriptions for the outputs
     video_descriptions {
       name              = "video_1080p"
       respond_to_afd    = "NONE"
@@ -486,7 +510,8 @@ resource "aws_medialive_channel" "live_streaming_channel" {
     input_settings {
       source_end_behavior = "CONTINUE"
       
-      audio_selectors {
+      # Fixed: Changed audio_selectors to audio_selector
+      audio_selector {
         name = "default"
         selector_settings {
           audio_pid_selection {
@@ -517,7 +542,7 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   dynamic "origin" {
     for_each = var.enable_hls ? [1] : []
     content {
-      domain_name = replace(aws_mediapackage_origin_endpoint.hls_endpoint[0].url, "https://", "")
+      domain_name = replace(awscc_mediapackage_origin_endpoint.hls_endpoint[0].url, "https://", "")
       origin_id   = "mediapackage-hls"
       origin_path = ""
 
@@ -534,7 +559,7 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   dynamic "origin" {
     for_each = var.enable_dash ? [1] : []
     content {
-      domain_name = replace(aws_mediapackage_origin_endpoint.dash_endpoint[0].url, "https://", "")
+      domain_name = replace(awscc_mediapackage_origin_endpoint.dash_endpoint[0].url, "https://", "")
       origin_id   = "mediapackage-dash"
       origin_path = ""
 
@@ -551,7 +576,7 @@ resource "aws_cloudfront_distribution" "live_streaming_distribution" {
   dynamic "origin" {
     for_each = var.enable_cmaf ? [1] : []
     content {
-      domain_name = replace(aws_mediapackage_origin_endpoint.cmaf_endpoint[0].url, "https://", "")
+      domain_name = replace(awscc_mediapackage_origin_endpoint.cmaf_endpoint[0].url, "https://", "")
       origin_id   = "mediapackage-cmaf"
       origin_path = ""
 
